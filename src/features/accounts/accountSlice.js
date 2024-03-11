@@ -40,8 +40,25 @@ export default function accountReducer(
 }
 
 // Action Creators
-export function deposit(amount) {
-  return { type: "account/deposit", payload: amount }
+export function deposit(amount, currency) {
+  if (currency === "USD") {
+    return { type: "account/deposit", payload: amount }
+  } else {
+    // this is a middleware between dispatch and store
+    // if we return a function here then Redux knows that this is the asynchronous action
+    // that we want to execute before dispatching anything to the store
+    return async function (dispatch, getState) {
+      dispatch({ type: "account/convertingCurrency" })
+
+      const res = await fetch(
+        `https://api.frankfurter.app/latest?amount=${amount}&from=${currency}&to=USD`,
+      )
+      const data = await res.json()
+      const converted = data.rates.USD
+
+      dispatch({ type: "account/deposit", payload: converted })
+    }
+  }
 }
 export function withdraw(amount) {
   return { type: "account/withdraw", payload: amount }
