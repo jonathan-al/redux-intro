@@ -2,6 +2,7 @@ const initalStateAccount = {
   balance: 0,
   loan: 0,
   loanPurpose: "",
+  isLoading: false,
 }
 
 export default function accountReducer(
@@ -13,6 +14,7 @@ export default function accountReducer(
       return {
         ...state,
         balance: +state.balance + +action.payload,
+        isLoading: false,
       }
     case "account/withdraw":
       return {
@@ -34,6 +36,8 @@ export default function accountReducer(
         loanPurpose: "",
         balance: state.balance - state.loan,
       }
+    case "account/convertingCurrency":
+      return { ...state, isLoading: true }
     default:
       return state
   }
