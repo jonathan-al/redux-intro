@@ -51,7 +51,11 @@ export function deposit(amount, currency) {
     // this is a middleware between dispatch and store
     // if we return a function here then Redux knows that this is the asynchronous action
     // that we want to execute before dispatching anything to the store
+
     return async function (dispatch, getState) {
+      // as we are receiving distpatch, we can call it multiple times
+      // but we dont have to call another dispatch for isLoading because we can change
+      // isLoading in the reducer in action account/deposit
       dispatch({ type: "account/convertingCurrency" })
 
       const res = await fetch(
@@ -60,6 +64,7 @@ export function deposit(amount, currency) {
       const data = await res.json()
       const converted = data.rates.USD
 
+      // as we are receiving distpatch, we can call it multiple times
       dispatch({ type: "account/deposit", payload: converted })
     }
   }
