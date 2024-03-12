@@ -1,83 +1,53 @@
-const initalStateAccount = {
+import { createSlice } from "@reduxjs/toolkit"
+
+const initialState = {
   balance: 0,
   loan: 0,
   loanPurpose: "",
   isLoading: false,
 }
 
-export default function accountReducer(
-  state = initalStateAccount,
-  action,
-) {
-  switch (action.type) {
-    case "account/deposit": // state domain/event name
-      return {
-        ...state,
-        balance: +state.balance + +action.payload,
-        isLoading: false,
-      }
-    case "account/withdraw":
-      return {
-        ...state,
-        balance: state.balance - action.payload,
-      }
-    case "account/requestLoan":
-      if (state.loan > 0) return state
-      return {
-        ...state,
-        loan: action.payload.amount,
-        loanPurpose: action.payload.purpose,
-        balance: state.balance + action.payload.amount,
-      }
-    case "account/payLoan":
-      return {
-        ...state,
-        loan: 0,
-        loanPurpose: "",
-        balance: state.balance - state.loan,
-      }
-    case "account/convertingCurrency":
-      return { ...state, isLoading: true }
-    default:
-      return state
-  }
-}
+const accountSlice = createSlice({
+  name: "account",
+  initialState,
+  reducers: {
+    deposit(state, action) {
+      state.balance += action.payload // mutate state
+      state.isLoading = false
+    },
+    withdraw(state, action) {
+      state.balance -= action.payload
+    },
+    requestLoan: {
+      // in order to recieve more than 1 argument use prepare()
+      prepare(amount, purpose) {
+        return {
+          payload: { amount, purpose },
+        }
+      },
 
-// Action Creators
-export function deposit(amount, currency) {
-  if (currency === "USD") {
-    return { type: "account/deposit", payload: amount }
-  } else {
-    // this is a middleware between dispatch and store
-    // if we return a function here then Redux knows that this is the asynchronous action
-    // that we want to execute before dispatching anything to the store
+      reducer(state, action) {
+        if (state.loan > 0) return // we dont need to return the original state
 
-    return async function (dispatch, getState) {
-      // as we are receiving distpatch, we can call it multiple times
-      // but we dont have to call another dispatch for isLoading because we can change
-      // isLoading in the reducer in action account/deposit
-      dispatch({ type: "account/convertingCurrency" })
+        state.loan = action.payload.amount // we dont use , because is not a object
+        state.loanPurpose = action.payload.purpose // we dont use : instead = because we are overriding
+        state.balance = state.balance + action.payload.amount // return has not {}
+      },
+    },
+    payLoan(state) {
+      // pay attention to the order of the
+      state.balance -= state.loan // this has to be in first place, before set loan to 0
+      state.loan = 0
+      state.loanPurpose = ""
+    },
+    convertingCurrency(state) {
+      state.isLoading = true
+    },
+  },
+})
 
-      const res = await fetch(
-        `https://api.frankfurter.app/latest?amount=${amount}&from=${currency}&to=USD`,
-      )
-      const data = await res.json()
-      const converted = data.rates.USD
+// console.log(accountSlice)
 
-      // as we are receiving distpatch, we can call it multiple times
-      dispatch({ type: "account/deposit", payload: converted })
-    }
-  }
-}
-export function withdraw(amount) {
-  return { type: "account/withdraw", payload: amount }
-}
-export function requestLoan(amount, purpose) {
-  return {
-    type: "account/requestLoan",
-    payload: { amount, purpose },
-  }
-}
-export function payLoan() {
-  return { type: "account/payLoan" }
-}
+export const { withdraw, requestLoan, payLoan } = accountSlice.actions
+
+export default accountSlice.reducer
