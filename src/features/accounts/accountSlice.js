@@ -25,7 +25,7 @@ const accountSlice = createSlice({
           payload: { amount, purpose },
         }
       },
-
+      // if you use prepare, you have to use reducer()
       reducer(state, action) {
         if (state.loan > 0) return // we dont need to return the original state
 
